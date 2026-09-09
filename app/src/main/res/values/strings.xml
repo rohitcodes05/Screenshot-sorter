@@ -1,0 +1,22 @@
+<resources>
+    <string name="app_name">ScreenSort</string>
+    <string name="tagline">Offline AI Screenshot Categorizer</string>
+    <string name="offline_badge">100% Offline OCR</string>
+    <string name="scan_screenshots">Scan Screenshots</string>
+    <string name="import_images">Import Images</string>
+    <string name="recluster_all">Re-cluster All</string>
+    <string name="search_placeholder">Search extracted text...</string>
+    <string name="all_categories">All</string>
+    <string name="category_label">Category: %1$s</string>
+    <string name="confidence_label">Confidence: %1$d%%</string>
+    <string name="no_screenshots_title">No Screenshots Yet</string>
+    <string name="no_screenshots_desc">Tap "Scan Screenshots" to automatically find and organize screenshots on your device, or "Import Images" to pick specific files.</string>
+    <string name="copy_text">Copy Extracted Text</string>
+    <string name="text_copied">Text copied to clipboard!</string>
+    <string name="storage_permission_rationale">ScreenSort requires storage permission to locate and scan your screenshots locally. No images or data are ever uploaded or transmitted.</string>
+    <string name="grant_permission">Grant Permission</string>
+    <string name="rename_category">Rename Category</string>
+    <string name="save">Save</string>
+    <string name="cancel">Cancel</string>
+    <string name="delete">Delete</string>
+</resources>
