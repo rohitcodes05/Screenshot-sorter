@@ -76,4 +76,16 @@ class ImageAnalysisManager {
             AnalysisResult(extractedText = "", visualLabels = emptyList())
         }
     }
+
+    /**
+     * Releases ML Kit resources when no longer needed.
+     */
+    fun close() {
+        try {
+            textRecognizer.close()
+            imageLabeler.close()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
 }

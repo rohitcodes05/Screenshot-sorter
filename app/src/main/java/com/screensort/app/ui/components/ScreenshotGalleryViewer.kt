@@ -116,6 +116,16 @@ fun ScreenshotGalleryViewer(
     val currentItem = screenshots[currentPage]
     val currentEntity = if (selectedScreenshotEntity?.id == currentItem.id) selectedScreenshotEntity else null
 
+    // Ensure pager state stays within valid bounds if items are deleted
+    LaunchedEffect(screenshots.size) {
+        if (screenshots.isNotEmpty()) {
+            val maxPage = screenshots.size - 1
+            if (pagerState.currentPage > maxPage) {
+                pagerState.scrollToPage(maxPage)
+            }
+        }
+    }
+
     // Notify parent when page changes so full entity can be loaded
     LaunchedEffect(currentPage) {
         onPageChanged(currentPage)
@@ -254,7 +264,12 @@ fun ScreenshotGalleryViewer(
 
                 val formattedDate = remember(currentItem.dateAdded) {
                     try {
-                        val date = Date(currentItem.dateAdded * 1000L)
+                        val timeMs = if (currentItem.dateAdded > 0 && currentItem.dateAdded < 100_000_000_000L) {
+                            currentItem.dateAdded * 1000L
+                        } else {
+                            currentItem.dateAdded
+                        }
+                        val date = Date(timeMs)
                         SimpleDateFormat("MMM d, yyyy, h:mm a", Locale.getDefault()).format(date)
                     } catch (e: Exception) {
                         ""

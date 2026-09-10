@@ -25,13 +25,18 @@ import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AddPhotoAlternate
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.DocumentScanner
+import androidx.compose.material.icons.filled.FileDownload
+import androidx.compose.material.icons.filled.FileUpload
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.Search
 import com.screensort.app.data.local.UserCategoryEntity
@@ -42,8 +47,11 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -68,11 +76,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.ExperimentalFoundationApi
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import com.screensort.app.ui.components.DynamicCategoryChips
 import com.screensort.app.ui.components.ScreenshotCard
 import com.screensort.app.ui.components.ScreenshotGalleryViewer
@@ -103,6 +115,24 @@ fun MainScreen(
     var categoryToDelete by remember { mutableStateOf<UserCategoryEntity?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
     val gridState = rememberLazyGridState()
+    val context = LocalContext.current
+    var showOptionsMenu by remember { mutableStateOf(false) }
+
+    val exportLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/json")
+    ) { uri ->
+        if (uri != null) {
+            viewModel.exportBackup(context, uri)
+        }
+    }
+
+    val importLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        if (uri != null) {
+            viewModel.importBackup(context, uri)
+        }
+    }
 
     LaunchedEffect(selectedCategory) {
         gridState.scrollToItem(0)
@@ -118,7 +148,7 @@ fun MainScreen(
     Box(modifier = modifier.fillMaxSize()) {
         Scaffold(
             topBar = {
-            CenterAlignedTopAppBar(
+            TopAppBar(
                 title = {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -177,8 +207,63 @@ fun MainScreen(
                             tint = MaterialTheme.colorScheme.primary
                         )
                     }
+
+                    Box {
+                        IconButton(
+                            onClick = { showOptionsMenu = true },
+                            enabled = !isScanning
+                        ) {
+                            Icon(
+                                Icons.Default.MoreVert,
+                                contentDescription = "More options",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+
+                        DropdownMenu(
+                            expanded = showOptionsMenu,
+                            onDismissRequest = { showOptionsMenu = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("Export Backup") },
+                                leadingIcon = {
+                                    Icon(Icons.Default.FileUpload, contentDescription = null)
+                                },
+                                onClick = {
+                                    showOptionsMenu = false
+                                    val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
+                                    exportLauncher.launch("ScreenSort_Backup_$timeStamp.json")
+                                }
+                            )
+
+                            DropdownMenuItem(
+                                text = { Text("Import Backup") },
+                                leadingIcon = {
+                                    Icon(Icons.Default.FileDownload, contentDescription = null)
+                                },
+                                onClick = {
+                                    showOptionsMenu = false
+                                    importLauncher.launch(arrayOf("application/json", "text/*", "*/*"))
+                                }
+                            )
+
+                            HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+
+                            DropdownMenuItem(
+                                text = { Text("Re-cluster All") },
+                                leadingIcon = {
+                                    Icon(Icons.Default.AutoAwesome, contentDescription = null)
+                                },
+                                enabled = totalCount > 0,
+                                onClick = {
+                                    showOptionsMenu = false
+                                    viewModel.reclusterAll()
+                                }
+                            )
+                        }
+                    }
                 },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.surface
                 )
             )

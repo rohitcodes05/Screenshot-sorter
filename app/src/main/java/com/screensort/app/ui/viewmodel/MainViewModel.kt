@@ -1,5 +1,6 @@
 package com.screensort.app.ui.viewmodel
 
+import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -8,7 +9,9 @@ import com.screensort.app.data.local.CategoryCount
 import com.screensort.app.data.local.ScreenshotEntity
 import com.screensort.app.data.local.ScreenshotGridItem
 import com.screensort.app.data.local.UserCategoryEntity
+import com.screensort.app.data.repository.BackupManager
 import com.screensort.app.data.repository.ScreenshotRepository
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
@@ -232,6 +235,10 @@ class MainViewModel(
     }
 
     fun createUserCategory(name: String, keywords: String) {
+        if (_isScanning.value) {
+            _userMessage.value = "Operation in progress, please wait."
+            return
+        }
         viewModelScope.launch {
             _isScanning.value = true
             _clusteringStage.value = "Sorting screenshots into $name..."
@@ -248,6 +255,10 @@ class MainViewModel(
     }
 
     fun updateUserCategory(category: UserCategoryEntity, newName: String, newKeywords: String) {
+        if (_isScanning.value) {
+            _userMessage.value = "Operation in progress, please wait."
+            return
+        }
         viewModelScope.launch {
             _isScanning.value = true
             _clusteringStage.value = "Updating category '$newName'..."
@@ -269,6 +280,10 @@ class MainViewModel(
     }
 
     fun deleteUserCategory(category: UserCategoryEntity) {
+        if (_isScanning.value) {
+            _userMessage.value = "Operation in progress, please wait."
+            return
+        }
         viewModelScope.launch {
             _isScanning.value = true
             _clusteringStage.value = "Reorganizing screenshots after deleting '${category.name}'..."
@@ -286,6 +301,73 @@ class MainViewModel(
                 _clusteringStage.value = "Ready"
             }
         }
+    }
+
+    /**
+     * Exports all screenshot metadata and user categories as a JSON file to the destination URI.
+     */
+    fun exportBackup(context: Context, destinationUri: Uri) {
+        if (_isScanning.value) {
+            _userMessage.value = "Please wait for current operation to finish."
+            return
+        }
+        val appContext = context.applicationContext
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val backup = repository.exportBackupData()
+                val jsonString = BackupManager.serializeToJson(backup)
+
+                appContext.contentResolver.openOutputStream(destinationUri)?.use { outputStream ->
+                    outputStream.write(jsonString.toByteArray(Charsets.UTF_8))
+                } ?: throw IllegalStateException("Unable to write to destination file.")
+
+                _userMessage.value = "Backup exported: ${backup.screenshots.size} screenshots, ${backup.userCategories.size} categories!"
+            } catch (e: Exception) {
+                _userMessage.value = "Failed to export backup: ${e.localizedMessage ?: "Unknown error"}"
+            }
+        }
+    }
+
+    /**
+     * Imports screenshot metadata and user categories from a JSON backup file,
+     * merging non-destructively with existing data.
+     */
+    fun importBackup(context: Context, sourceUri: Uri) {
+        if (_isScanning.value) {
+            _userMessage.value = "Please wait for current operation to finish."
+            return
+        }
+        val appContext = context.applicationContext
+        viewModelScope.launch(Dispatchers.IO) {
+            _isScanning.value = true
+            _clusteringStage.value = "Restoring backup data..."
+            try {
+                // Defensive size check: prevent OutOfMemoryError on gigantic or non-backup files
+                appContext.contentResolver.openFileDescriptor(sourceUri, "r")?.use { pfd ->
+                    if (pfd.statSize > MAX_BACKUP_SIZE_BYTES) {
+                        throw IllegalStateException("File exceeds 25MB limit. Please select a valid ScreenSort backup file.")
+                    }
+                }
+
+                val jsonString = appContext.contentResolver.openInputStream(sourceUri)?.use { inputStream ->
+                    inputStream.bufferedReader(Charsets.UTF_8).readText()
+                } ?: throw IllegalStateException("Unable to read backup file.")
+
+                val backup = BackupManager.deserializeFromJson(jsonString)
+                val result = repository.importBackupData(backup)
+
+                _userMessage.value = "Backup restored: ${result.newScreenshotsCount} added, ${result.updatedScreenshotsCount} updated, ${result.newCategoriesCount} categories added!"
+            } catch (e: Exception) {
+                _userMessage.value = "Failed to import backup: ${e.localizedMessage ?: "Invalid backup file"}"
+            } finally {
+                _isScanning.value = false
+                _clusteringStage.value = "Ready"
+            }
+        }
+    }
+
+    companion object {
+        private const val MAX_BACKUP_SIZE_BYTES = 25 * 1024 * 1024L // 25 MB safety limit
     }
 
     class Factory(private val repository: ScreenshotRepository) : ViewModelProvider.Factory {
