@@ -1,6 +1,11 @@
 package com.screensort.app.ui.screens
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -66,12 +71,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.ExperimentalFoundationApi
 import com.screensort.app.ui.components.DynamicCategoryChips
 import com.screensort.app.ui.components.ScreenshotCard
 import com.screensort.app.ui.components.ScreenshotDetailDialog
 import com.screensort.app.ui.viewmodel.MainViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun MainScreen(
     viewModel: MainViewModel,
@@ -188,17 +194,26 @@ fun MainScreen(
                 onValueChange = { viewModel.setSearchQuery(it) },
                 placeholder = { Text("Search text across screenshots...") },
                 leadingIcon = {
-                    Icon(Icons.Default.Search, contentDescription = null)
+                    Icon(
+                        Icons.Default.Search,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 },
                 trailingIcon = {
-                    if (searchQuery.isNotEmpty()) {
+                    AnimatedVisibility(visible = searchQuery.isNotEmpty()) {
                         IconButton(onClick = { viewModel.setSearchQuery("") }) {
-                            Icon(Icons.Default.Clear, contentDescription = "Clear")
+                            Icon(Icons.Default.Clear, contentDescription = "Clear search")
                         }
                     }
                 },
                 singleLine = true,
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(24.dp),
+                colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
+                    focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)
+                ),
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 4.dp)
@@ -217,7 +232,9 @@ fun MainScreen(
                 Button(
                     onClick = onTriggerScan,
                     enabled = !isScanning,
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(44.dp),
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Icon(Icons.Default.DocumentScanner, contentDescription = null, modifier = Modifier.size(18.dp))
@@ -228,7 +245,9 @@ fun MainScreen(
                 OutlinedButton(
                     onClick = onTriggerImport,
                     enabled = !isScanning,
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(44.dp),
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Icon(Icons.Default.AddPhotoAlternate, contentDescription = null, modifier = Modifier.size(18.dp))
@@ -246,80 +265,102 @@ fun MainScreen(
                 userCategories = userCategories,
                 onEditCategory = { categoryToEdit = it },
                 onDeleteCategory = { categoryToDelete = it },
-                modifier = Modifier.padding(vertical = 6.dp)
+                modifier = Modifier.padding(vertical = 4.dp)
             )
 
-            // Screenshots Grid or Empty State
-            if (screenshots.isEmpty()) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(24.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
+            // Screenshots Grid or Empty State with smooth fade transitions
+            AnimatedContent(
+                targetState = screenshots.isEmpty(),
+                transitionSpec = {
+                    fadeIn(animationSpec = tween(220)) togetherWith fadeOut(animationSpec = tween(180))
+                },
+                label = "GridContentAnimation"
+            ) { isEmpty ->
+                if (isEmpty) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 32.dp, vertical = 24.dp),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Surface(
-                            shape = CircleShape,
-                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f),
-                            modifier = Modifier.size(80.dp)
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
                         ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(
-                                    Icons.Default.PhotoLibrary,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(40.dp)
-                                )
+                            Surface(
+                                shape = CircleShape,
+                                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f),
+                                modifier = Modifier.size(88.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        Icons.Default.PhotoLibrary,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(44.dp)
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(20.dp))
+
+                            val emptyTitle = when {
+                                searchQuery.isNotEmpty() -> "No matches found"
+                                selectedCategory != null -> "No Screenshots in \"$selectedCategory\""
+                                else -> "No Screenshots Organized Yet"
+                            }
+                            val emptyDescription = when {
+                                searchQuery.isNotEmpty() -> "No screenshot matched \"$searchQuery\". Check your spelling or try another keyword."
+                                selectedCategory != null -> "Screenshots matching \"$selectedCategory\" will automatically route here once scanned or imported."
+                                else -> "Tap \"Scan Device\" to discover screenshots, or \"Import\" to select photos. The app will organize them into topics automatically!"
+                            }
+
+                            Text(
+                                text = emptyTitle,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                textAlign = TextAlign.Center
+                            )
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            Text(
+                                text = emptyDescription,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = TextAlign.Center,
+                                lineHeight = 20.sp
+                            )
+
+                            if (searchQuery.isNotEmpty()) {
+                                Spacer(modifier = Modifier.height(16.dp))
+                                OutlinedButton(
+                                    onClick = { viewModel.setSearchQuery("") },
+                                    shape = RoundedCornerShape(12.dp)
+                                ) {
+                                    Icon(Icons.Default.Clear, contentDescription = null, modifier = Modifier.size(16.dp))
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text("Clear Search")
+                                }
                             }
                         }
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        val emptyTitle = when {
-                            searchQuery.isNotEmpty() -> "No matches found"
-                            selectedCategory != null -> "No Screenshots in \"$selectedCategory\" Yet"
-                            else -> "No Screenshots Organized Yet"
-                        }
-                        val emptyDescription = when {
-                            searchQuery.isNotEmpty() -> "Try searching for a different keyword or clear the search bar."
-                            selectedCategory != null -> "Screenshots matching \"$selectedCategory\" (or its keywords) will appear here once scanned or imported."
-                            else -> "Tap \"Scan Device\" to automatically discover screenshots, or \"Import\" to choose images. The app will extract text and invent categories dynamically!"
-                        }
-
-                        Text(
-                            text = emptyTitle,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            textAlign = TextAlign.Center
-                        )
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        Text(
-                            text = emptyDescription,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = TextAlign.Center
-                        )
                     }
-                }
-            } else {
-                LazyVerticalGrid(
-                    state = gridState,
-                    columns = GridCells.Fixed(2),
-                    contentPadding = PaddingValues(16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    items(screenshots, key = { it.id }) { item ->
-                        ScreenshotCard(
-                            screenshot = item,
-                            onClick = { viewModel.selectScreenshot(item.id) }
-                        )
+                } else {
+                    LazyVerticalGrid(
+                        state = gridState,
+                        columns = GridCells.Fixed(2),
+                        contentPadding = PaddingValues(16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        items(screenshots, key = { it.id }) { item ->
+                            ScreenshotCard(
+                                screenshot = item,
+                                onClick = { viewModel.selectScreenshot(item.id) },
+                                modifier = Modifier.animateItemPlacement()
+                            )
+                        }
                     }
                 }
             }
@@ -394,43 +435,77 @@ private fun ScanningProgressSection(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 6.dp),
+            shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
+            ),
+            border = androidx.compose.foundation.BorderStroke(
+                1.dp,
+                MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
             )
         ) {
-            Column(modifier = Modifier.padding(12.dp)) {
+            Column(modifier = Modifier.padding(14.dp)) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(
-                        text = clusteringStage,
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    scanProgress?.let { (cur, total) ->
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.AutoAwesome,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
                         Text(
-                            text = "$cur / $total",
-                            style = MaterialTheme.typography.labelMedium
+                            text = clusteringStage,
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.SemiBold
                         )
                     }
+
+                    scanProgress?.let { (cur, total) ->
+                        Surface(
+                            shape = RoundedCornerShape(6.dp),
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                        ) {
+                            Text(
+                                text = "$cur / $total",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                            )
+                        }
+                    }
                 }
-                Spacer(modifier = Modifier.height(8.dp))
+
+                Spacer(modifier = Modifier.height(10.dp))
+
                 if (scanProgress != null) {
                     val (cur, total) = scanProgress!!
-                    val progress = if (total > 0) cur.toFloat() / total.toFloat() else 0f
+                    val rawProgress = if (total > 0) cur.toFloat() / total.toFloat() else 0f
+                    val animatedProgress by androidx.compose.animation.core.animateFloatAsState(
+                        targetValue = rawProgress,
+                        animationSpec = androidx.compose.animation.core.tween(150),
+                        label = "ProgressBarAnimation"
+                    )
                     LinearProgressIndicator(
-                        progress = { progress },
+                        progress = { animatedProgress },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clip(RoundedCornerShape(4.dp))
+                            .height(6.dp)
+                            .clip(RoundedCornerShape(3.dp))
                     )
                 } else {
                     LinearProgressIndicator(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clip(RoundedCornerShape(4.dp))
+                            .height(6.dp)
+                            .clip(RoundedCornerShape(3.dp))
                     )
                 }
             }

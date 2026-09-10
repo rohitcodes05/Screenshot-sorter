@@ -19,6 +19,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.screensort.app.data.local.UserCategoryEntity
 
+import androidx.compose.foundation.shape.RoundedCornerShape
+
 @Composable
 fun EditCategoryDialog(
     category: UserCategoryEntity,
@@ -30,7 +32,13 @@ fun EditCategoryDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Edit Category") },
+        shape = RoundedCornerShape(24.dp),
+        title = {
+            Text(
+                text = "Edit Category",
+                style = MaterialTheme.typography.titleLarge
+            )
+        },
         text = {
             Column {
                 Text(
@@ -39,13 +47,14 @@ fun EditCategoryDialog(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(14.dp))
 
                 OutlinedTextField(
                     value = categoryName,
                     onValueChange = { categoryName = it },
                     label = { Text("Category Name") },
                     singleLine = true,
+                    shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -56,6 +65,7 @@ fun EditCategoryDialog(
                     onValueChange = { keywords = it },
                     label = { Text("Keywords / Aliases (comma-separated)") },
                     placeholder = { Text("film, cinema, netflix, trailer") },
+                    shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -67,13 +77,17 @@ fun EditCategoryDialog(
                         onConfirm(categoryName.trim(), keywords.trim())
                     }
                 },
-                enabled = categoryName.isNotBlank()
+                enabled = categoryName.isNotBlank(),
+                shape = RoundedCornerShape(12.dp)
             ) {
                 Text("Save Changes")
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
+            TextButton(
+                onClick = onDismiss,
+                shape = RoundedCornerShape(12.dp)
+            ) {
                 Text("Cancel")
             }
         }

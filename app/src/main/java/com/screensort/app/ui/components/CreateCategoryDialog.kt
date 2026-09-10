@@ -19,6 +19,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
@@ -43,7 +44,13 @@ fun CreateCategoryDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Create Custom Category") },
+        shape = RoundedCornerShape(24.dp),
+        title = {
+            Text(
+                text = "Create Custom Category",
+                style = MaterialTheme.typography.titleLarge
+            )
+        },
         text = {
             Column {
                 Text(
@@ -52,13 +59,14 @@ fun CreateCategoryDialog(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(14.dp))
 
                 OutlinedTextField(
                     value = categoryName,
                     onValueChange = { categoryName = it },
                     label = { Text("Category Name (e.g. Movies)") },
                     singleLine = true,
+                    shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -69,15 +77,17 @@ fun CreateCategoryDialog(
                     onValueChange = { keywords = it },
                     label = { Text("Keywords / Aliases (comma-separated)") },
                     placeholder = { Text("film, cinema, netflix, trailer") },
+                    shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(14.dp))
 
                 Text(
                     text = "Quick suggestions:",
                     style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.secondary
+                    color = MaterialTheme.colorScheme.secondary,
+                    fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold
                 )
 
                 Spacer(modifier = Modifier.height(6.dp))
@@ -92,7 +102,8 @@ fun CreateCategoryDialog(
                                 categoryName = name
                                 keywords = kw
                             },
-                            label = { Text(name) }
+                            shape = RoundedCornerShape(8.dp),
+                            label = { Text(name, style = MaterialTheme.typography.labelMedium) }
                         )
                     }
                 }
@@ -105,13 +116,17 @@ fun CreateCategoryDialog(
                         onConfirm(categoryName.trim(), keywords.trim())
                     }
                 },
-                enabled = categoryName.isNotBlank()
+                enabled = categoryName.isNotBlank(),
+                shape = RoundedCornerShape(12.dp)
             ) {
                 Text("Create & Sort")
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
+            TextButton(
+                onClick = onDismiss,
+                shape = RoundedCornerShape(12.dp)
+            ) {
                 Text("Cancel")
             }
         }

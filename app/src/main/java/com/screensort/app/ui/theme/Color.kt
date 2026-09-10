@@ -14,18 +14,21 @@ val Pink40 = Color(0xFF7D5260)
 val SurfaceLight = Color(0xFFFBF8FD)
 val SurfaceDark = Color(0xFF141218)
 
-// Palette for dynamic category badge colors
+val GoldAccent = Color(0xFFF59E0B)
+val GoldAccentContainer = Color(0xFFFEF3C7)
+
+// Palette for dynamic category badge colors - refined for high contrast and elegance
 private val CategoryPalette = listOf(
-    Color(0xFF6750A4), // Purple
-    Color(0xFF006C50), // Teal
-    Color(0xFF984061), // Magenta
-    Color(0xFF006494), // Blue
-    Color(0xFF904D00), // Amber / Orange
-    Color(0xFF386A20), // Forest Green
-    Color(0xFF705574), // Mauve
-    Color(0xFF5B5D72), // Slate
-    Color(0xFF8B4A60), // Rose
-    Color(0xFF006972)  // Cyan
+    Color(0xFF6366F1), // Indigo
+    Color(0xFF0D9488), // Teal
+    Color(0xFFE11D48), // Rose
+    Color(0xFF2563EB), // Blue
+    Color(0xFFD97706), // Amber
+    Color(0xFF16A34A), // Emerald Green
+    Color(0xFF9333EA), // Purple
+    Color(0xFF0284C7), // Sky Blue
+    Color(0xFFEA580C), // Orange
+    Color(0xFF475569)  // Slate
 )
 
 /**
@@ -34,8 +37,16 @@ private val CategoryPalette = listOf(
  */
 fun getCategoryColor(categoryName: String): Color {
     if (categoryName.isBlank() || categoryName.equals("Unclassified", ignoreCase = true)) {
-        return Color(0xFF757575)
+        return Color(0xFF64748B)
     }
     val hash = abs(categoryName.hashCode())
     return CategoryPalette[hash % CategoryPalette.size]
+}
+
+/**
+ * Returns a subtle translucent container tint for chips and badges.
+ */
+fun getCategoryContainerColor(categoryName: String, isDark: Boolean = false): Color {
+    val base = getCategoryColor(categoryName)
+    return if (isDark) base.copy(alpha = 0.22f) else base.copy(alpha = 0.12f)
 }
