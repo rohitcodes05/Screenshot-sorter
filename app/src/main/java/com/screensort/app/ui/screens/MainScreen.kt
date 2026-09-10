@@ -21,7 +21,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -61,6 +61,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
@@ -74,7 +75,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.ExperimentalFoundationApi
 import com.screensort.app.ui.components.DynamicCategoryChips
 import com.screensort.app.ui.components.ScreenshotCard
-import com.screensort.app.ui.components.ScreenshotDetailDialog
+import com.screensort.app.ui.components.ScreenshotGalleryViewer
 import com.screensort.app.ui.viewmodel.MainViewModel
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
@@ -96,6 +97,7 @@ fun MainScreen(
     val screenshots by viewModel.screenshots.collectAsStateWithLifecycle()
     val totalCount = categoryCounts.sumOf { it.count }
 
+    var activeViewerIndex by rememberSaveable { mutableStateOf<Int?>(null) }
     var showCreateCategoryDialog by remember { mutableStateOf(false) }
     var categoryToEdit by remember { mutableStateOf<UserCategoryEntity?>(null) }
     var categoryToDelete by remember { mutableStateOf<UserCategoryEntity?>(null) }
@@ -113,8 +115,9 @@ fun MainScreen(
         }
     }
 
-    Scaffold(
-        topBar = {
+    Box(modifier = modifier.fillMaxSize()) {
+        Scaffold(
+            topBar = {
             CenterAlignedTopAppBar(
                 title = {
                     Row(
@@ -354,10 +357,13 @@ fun MainScreen(
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                         modifier = Modifier.fillMaxSize()
                     ) {
-                        items(screenshots, key = { it.id }) { item ->
+                        itemsIndexed(screenshots, key = { _, item -> item.id }) { index, item ->
                             ScreenshotCard(
                                 screenshot = item,
-                                onClick = { viewModel.selectScreenshot(item.id) },
+                                onClick = {
+                                    activeViewerIndex = index
+                                    viewModel.selectScreenshot(item.id)
+                                },
                                 modifier = Modifier.animateItemPlacement()
                             )
                         }
@@ -367,49 +373,74 @@ fun MainScreen(
         }
     }
 
-    // Detail Dialog
-    selectedScreenshot?.let { item ->
-        ScreenshotDetailDialog(
-            screenshot = item,
-            onDismiss = { viewModel.selectScreenshot(null) },
-            onRenameCategory = { id, newName -> viewModel.updateCategory(id, newName) },
-            onDelete = { viewModel.deleteScreenshot(it) }
-        )
-    }
-
     // Create User Category Dialog
-    if (showCreateCategoryDialog) {
-        CreateCategoryDialog(
-            onDismiss = { showCreateCategoryDialog = false },
-            onConfirm = { name, keywords ->
-                viewModel.createUserCategory(name, keywords)
-                showCreateCategoryDialog = false
-            }
-        )
-    }
+        if (showCreateCategoryDialog) {
+            CreateCategoryDialog(
+                onDismiss = { showCreateCategoryDialog = false },
+                onConfirm = { name, keywords ->
+                    viewModel.createUserCategory(name, keywords)
+                    showCreateCategoryDialog = false
+                }
+            )
+        }
 
-    // Edit User Category Dialog
-    categoryToEdit?.let { category ->
-        EditCategoryDialog(
-            category = category,
-            onDismiss = { categoryToEdit = null },
-            onConfirm = { newName, newKeywords ->
-                viewModel.updateUserCategory(category, newName, newKeywords)
-                categoryToEdit = null
-            }
-        )
-    }
+        // Edit User Category Dialog
+        categoryToEdit?.let { category ->
+            EditCategoryDialog(
+                category = category,
+                onDismiss = { categoryToEdit = null },
+                onConfirm = { newName, newKeywords ->
+                    viewModel.updateUserCategory(category, newName, newKeywords)
+                    categoryToEdit = null
+                }
+            )
+        }
 
-    // Delete User Category Dialog
-    categoryToDelete?.let { category ->
-        DeleteCategoryConfirmationDialog(
-            category = category,
-            onDismiss = { categoryToDelete = null },
-            onConfirm = {
-                viewModel.deleteUserCategory(category)
-                categoryToDelete = null
+        // Delete User Category Dialog
+        categoryToDelete?.let { category ->
+            DeleteCategoryConfirmationDialog(
+                category = category,
+                onDismiss = { categoryToDelete = null },
+                onConfirm = {
+                    viewModel.deleteUserCategory(category)
+                    categoryToDelete = null
+                }
+            )
+        }
+
+        // Full-screen Gallery Viewer Overlay
+        activeViewerIndex?.let { index ->
+            if (screenshots.isNotEmpty()) {
+                val safeIndex = index.coerceIn(0, screenshots.size - 1)
+                ScreenshotGalleryViewer(
+                    screenshots = screenshots,
+                    initialIndex = safeIndex,
+                    selectedScreenshotEntity = selectedScreenshot,
+                    onPageChanged = { newPage ->
+                        activeViewerIndex = newPage
+                        if (newPage in screenshots.indices) {
+                            viewModel.selectScreenshot(screenshots[newPage].id)
+                        }
+                    },
+                    onDismiss = {
+                        activeViewerIndex = null
+                        viewModel.selectScreenshot(null)
+                    },
+                    onRenameCategory = { id, newName -> viewModel.updateCategory(id, newName) },
+                    onDelete = { entity ->
+                        viewModel.deleteScreenshot(entity)
+                        if (screenshots.size <= 1) {
+                            activeViewerIndex = null
+                            viewModel.selectScreenshot(null)
+                        } else if (safeIndex >= screenshots.size - 1) {
+                            activeViewerIndex = screenshots.size - 2
+                        }
+                    }
+                )
+            } else {
+                activeViewerIndex = null
             }
-        )
+        }
     }
 }
 

@@ -86,7 +86,7 @@ screenshoter/
 │   │   │   │       ├── components/
 │   │   │   │       │   ├── DynamicCategoryChips.kt# Filter chips with live counts
 │   │   │   │       │   ├── ScreenshotCard.kt      # Grid item card
-│   │   │   │       │   └── ScreenshotDetailDialog.kt # Full view + Copy OCR text
+│   │   │   │       │   └── ScreenshotGalleryViewer.kt # Full-screen gallery viewer + Info bottom sheet
 │   │   │   │       ├── viewmodel/
 │   │   │   │       │   └── MainViewModel.kt       # StateFlow UI state holder
 │   │   │   │       └── screens/
