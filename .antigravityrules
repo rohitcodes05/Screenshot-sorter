@@ -1,0 +1,57 @@
+# Antigravity Rules — ScreenSort
+
+> **Scope**: Applies to all future code generation, refactoring, and UI design within this project.
+> **Integrity**: Never mutate, rewrite, or delete existing business logic unless explicitly requested.
+
+---
+
+## 1. Strict UI & Design Guidelines
+
+### Design Philosophy (Clean Modern Neutral / "shadcn" Style)
+- **Aesthetic**: Utilitarian, minimal, crisp, and distraction-free. Follow clean slate/zinc neutral tones, high legibility, and refined micro-interactions.
+- **Strictly Prohibited**:
+  - ❌ **NO Neon Gradients**: Never use generic neon purple, electric cyan, vibrant magenta, or rainbow linear/radial gradients on buttons, cards, headers, or backgrounds.
+  - ❌ **NO AI Gimmicks**: No glowing halos, floating sparkles, futuristic neon effects, or glossy/frosted glassmorphic cards.
+  - ❌ **NO Heavy Shadows**: Maximum elevation is 1dp–2dp tonal elevation or flat 1dp subtle border outlines.
+
+### Color Palette Rules
+- **Surfaces & Backgrounds**:
+  - Light mode: Clean off-whites, neutral zinc/slate tints (`#F8F9FA`, `#F3EDF7`, `#FEF7FF`).
+  - Dark mode: Deep neutral charcoal/black (`#121212`, `#141218`, `#1D1B20`).
+- **Borders & Dividers**:
+  - Use subtle 1dp border strokes (`outlineVariant.copy(alpha = 0.5f)` or slate border `#E2E8F0` / `#27272A`).
+- **Typography & Text**:
+  - High contrast, legible neutrals (`#1D1B20` light, `#E2E8F0` dark). Muted text uses neutral slate (`#64748B` / `#94A3B8`).
+- **Primary Accent**:
+  - Exactly **ONE** restrained, flat accent color per screen context (e.g. flat Indigo, flat Deep Teal, or M3 primary). Dynamic category badges use deterministic semantic colors, never neon gradients.
+
+### Component Guidelines (Jetpack Compose / Web)
+- **Cards**: Flat `Card` or `OutlinedCard` with `RoundedCornerShape(12.dp)` to `RoundedCornerShape(16.dp)` and subtle 1dp borders.
+- **Buttons**: Flat solid or tonal containers (`RoundedCornerShape(10.dp)` to `12.dp`), standard heights (40–44dp), clean typography.
+- **TopAppBar**: Flat app bar matching the window surface without gradient banners or decorative badges.
+- **Dialogs & Sheets**: Standard clean surface containers (`RoundedCornerShape(20.dp)` to `24.dp`) with high contrast text.
+
+---
+
+## 2. Code Cleanliness, Unused Imports & Dead Code Rules
+
+- **Unused Imports**:
+  - Never introduce unused imports.
+  - In Kotlin: Configure and maintain Detekt rules (`UnusedImports: active: true`) and Android Studio optimize imports (`Ctrl+Alt+O` / `Cmd+Option+O`).
+  - In any JavaScript/TypeScript/Web tooling: Enforce Biome (`assist.organizeImports.enabled: true` or `linter.rules.correctness.noUnusedImports: "error"`) and ESLint (`no-unused-vars` / `unused-imports/no-unused-imports`).
+- **Dead Code Prevention**:
+  - Do not leave abandoned helper functions, unreferenced constants, or unreachable code branches.
+  - Before modifying existing files, always report any detected dead code or unused imports to the user before touching or removing them.
+
+---
+
+## 3. Security & Zero Hardcoded Secrets Policy
+
+- **100% Offline Integrity**:
+  - ScreenSort is strictly offline. `android.permission.INTERNET` must **never** be added to `AndroidManifest.xml`.
+  - No telemetries, analytics, remote logging, or network calls may be added without explicit user direction.
+- **Zero Hardcoded Keys & Secrets**:
+  - Never hardcode API keys, secret tokens, private keys, bearer credentials, or database passwords in source code, tests, or build scripts.
+  - Local credentials (if ever required) must strictly reside in `local.properties` (which is gitignored).
+  - Production/CI credentials must be passed through environment variables.
+  - Sensitive files (`.env`, `local.properties`, `*.jks`, `*.keystore`, `google-services.json`, `secrets.properties`) must remain strictly in `.gitignore`.

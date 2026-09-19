@@ -15,7 +15,6 @@ val SurfaceLight = Color(0xFFFBF8FD)
 val SurfaceDark = Color(0xFF141218)
 
 val GoldAccent = Color(0xFFF59E0B)
-val GoldAccentContainer = Color(0xFFFEF3C7)
 
 // Palette for dynamic category badge colors - refined for high contrast and elegance
 private val CategoryPalette = listOf(
@@ -41,12 +40,4 @@ fun getCategoryColor(categoryName: String): Color {
     }
     val hash = abs(categoryName.hashCode())
     return CategoryPalette[hash % CategoryPalette.size]
-}
-
-/**
- * Returns a subtle translucent container tint for chips and badges.
- */
-fun getCategoryContainerColor(categoryName: String, isDark: Boolean = false): Color {
-    val base = getCategoryColor(categoryName)
-    return if (isDark) base.copy(alpha = 0.22f) else base.copy(alpha = 0.12f)
 }

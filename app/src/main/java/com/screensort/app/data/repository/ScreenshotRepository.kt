@@ -12,6 +12,7 @@ import com.screensort.app.domain.DynamicTopicEngine
 import com.screensort.app.domain.UserCategoryMatcher
 import com.screensort.app.ocr.ImageAnalysisManager
 import com.screensort.app.ocr.MediaStoreScanner
+import com.screensort.app.util.DateTimeUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
@@ -120,13 +121,8 @@ class ScreenshotRepository(
         return items.size
     }
 
-    private fun normalizeTimestamp(timestamp: Long): Long {
-        return when {
-            timestamp <= 0L -> System.currentTimeMillis()
-            timestamp < 100_000_000_000L -> timestamp * 1000L
-            else -> timestamp
-        }
-    }
+    private fun normalizeTimestamp(timestamp: Long): Long =
+        DateTimeUtils.normalizeTimestamp(timestamp)
 
     /**
      * Scans the device for new screenshots, runs offline multimodal analysis (OCR + Labels),
@@ -139,20 +135,17 @@ class ScreenshotRepository(
         val discovered = mediaStoreScanner.findScreenshots()
         if (discovered.isEmpty()) return@withContext 0
 
-        val existingScreenshots = dao.getAllScreenshotsSync()
-        val alreadyScannedUris = existingScreenshots.map { it.uriString }.toSet()
+        val alreadyScannedUris = dao.getAllScannedUris().toSet()
+        val candidateNew = discovered.filter { it.uri.toString() !in alreadyScannedUris }
+        if (candidateNew.isEmpty()) return@withContext 0
+
+        val existingScreenshots = dao.getAllGridItemsSync()
         val existingByName = existingScreenshots.groupBy { it.displayName.trim().lowercase() }
 
-        val toUpdateUris = mutableListOf<ScreenshotEntity>()
         val newScreenshots = mutableListOf<ImageIngestItem>()
 
-        for (item in discovered) {
+        for (item in candidateNew) {
             val itemUriStr = item.uri.toString()
-            if (itemUriStr in alreadyScannedUris) {
-                // Already indexed with this exact URI
-                continue
-            }
-
             val itemNormDate = normalizeTimestamp(item.dateAdded)
             val nameClean = item.displayName.trim().lowercase()
             val candidates = existingByName[nameClean]
@@ -164,19 +157,19 @@ class ScreenshotRepository(
             }
 
             if (matchedExisting != null) {
-                // Reconcile: update the URI on the existing DB entity so it links to the local file
-                toUpdateUris.add(matchedExisting.copy(uriString = itemUriStr))
+                // Reconcile: update the URI on the existing DB record without loading full OCR text
+                dao.updateUri(matchedExisting.id, itemUriStr)
             } else {
                 // Truly new screenshot requiring fresh multimodal analysis
                 newScreenshots.add(ImageIngestItem(item.uri, item.displayName, item.dateAdded))
             }
         }
 
-        if (toUpdateUris.isNotEmpty()) {
-            dao.updateAll(toUpdateUris)
+        if (newScreenshots.isNotEmpty()) {
+            ingestAndProcessImages(newScreenshots, onProgress)
+        } else {
+            0
         }
-
-        ingestAndProcessImages(newScreenshots, onProgress)
     }
 
     /**
@@ -188,8 +181,12 @@ class ScreenshotRepository(
     ): Int = withContext(Dispatchers.IO) {
         if (uris.isEmpty()) return@withContext 0
 
+        val alreadyScannedUris = dao.getAllScannedUris().toSet()
+        val candidateUris = uris.filter { it.toString() !in alreadyScannedUris }
+        if (candidateUris.isEmpty()) return@withContext 0
+
         val now = System.currentTimeMillis()
-        val items = uris.mapIndexed { index, uri ->
+        val items = candidateUris.mapIndexed { index, uri ->
             ImageIngestItem(
                 uri = uri,
                 displayName = "Imported_${now}_$index",

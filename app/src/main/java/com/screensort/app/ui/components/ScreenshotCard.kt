@@ -34,9 +34,7 @@ import coil.request.ImageRequest
 import coil.size.Precision
 import com.screensort.app.data.local.ScreenshotGridItem
 import com.screensort.app.ui.theme.getCategoryColor
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import com.screensort.app.util.DateTimeUtils
 
 @Composable
 fun ScreenshotCard(
@@ -56,8 +54,7 @@ fun ScreenshotCard(
     }
 
     val formattedDate = remember(screenshot.dateAdded) {
-        val sdf = SimpleDateFormat("MMM d, yyyy", Locale.getDefault())
-        sdf.format(Date(screenshot.dateAdded))
+        DateTimeUtils.formatDate(screenshot.dateAdded)
     }
 
     val cardShape = RoundedCornerShape(16.dp)

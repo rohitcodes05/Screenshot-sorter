@@ -1,0 +1,36 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- 
+      Material You Monochrome Adaptive Icon for Android 13+ Themed Icons.
+      Uses pure white with stepped tonal opacity for system wallpaper tinting.
+    -->
+
+    <!-- Card 1: Back Card (Low Opacity) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:fillAlpha="0.4"
+        android:pathData="M 38.5,30 h 21 a 4.5,4.5 0 0 1 4.5,4.5 v 31 a 4.5,4.5 0 0 1 -4.5,4.5 h -21 a 4.5,4.5 0 0 1 -4.5,-4.5 v -31 a 4.5,4.5 0 0 1 4.5,-4.5 z" />
+
+    <!-- Card 2: Middle Card (Medium Opacity) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:fillAlpha="0.65"
+        android:pathData="M 43.5,34 h 21 a 4.5,4.5 0 0 1 4.5,4.5 v 31 a 4.5,4.5 0 0 1 -4.5,4.5 h -21 a 4.5,4.5 0 0 1 -4.5,-4.5 v -31 a 4.5,4.5 0 0 1 4.5,-4.5 z" />
+
+    <!-- Card 3: Tab (Full Opacity) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:fillAlpha="1.0"
+        android:pathData="M 63,34.5 h 7 a 2,2 0 0 1 2,2 v 4.5 a 0.5,0.5 0 0 1 -0.5,0.5 h -10 a 0.5,0.5 0 0 1 -0.5,-0.5 v -4.5 a 2,2 0 0 1 2,-2 z" />
+
+    <!-- Card 3: Front Card (High Opacity) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:fillAlpha="0.95"
+        android:pathData="M 48.5,38 h 21 a 4.5,4.5 0 0 1 4.5,4.5 v 31 a 4.5,4.5 0 0 1 -4.5,4.5 h -21 a 4.5,4.5 0 0 1 -4.5,-4.5 v -31 a 4.5,4.5 0 0 1 4.5,-4.5 z" />
+
+</vector>

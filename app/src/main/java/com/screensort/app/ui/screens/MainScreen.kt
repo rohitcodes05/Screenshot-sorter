@@ -6,7 +6,6 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -29,22 +28,15 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.AddPhotoAlternate
-import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.filled.DocumentScanner
-import androidx.compose.material.icons.filled.FileDownload
-import androidx.compose.material.icons.filled.FileUpload
-import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.Search
+import com.screensort.app.ui.icons.AppIcons
 import com.screensort.app.data.local.UserCategoryEntity
 import com.screensort.app.ui.components.CreateCategoryDialog
 import com.screensort.app.ui.components.DeleteCategoryConfirmationDialog
 import com.screensort.app.ui.components.EditCategoryDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.TopAppBar
@@ -169,7 +161,7 @@ fun MainScreen(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Icon(
-                                    Icons.Default.Lock,
+                                    AppIcons.Lock,
                                     contentDescription = null,
                                     tint = Color(0xFF2E7D32),
                                     modifier = Modifier.size(12.dp)
@@ -202,7 +194,7 @@ fun MainScreen(
                         enabled = !isScanning && totalCount > 0
                     ) {
                         Icon(
-                            Icons.Default.AutoAwesome,
+                            AppIcons.AutoAwesome,
                             contentDescription = "Re-cluster Categories",
                             tint = MaterialTheme.colorScheme.primary
                         )
@@ -227,7 +219,7 @@ fun MainScreen(
                             DropdownMenuItem(
                                 text = { Text("Export Backup") },
                                 leadingIcon = {
-                                    Icon(Icons.Default.FileUpload, contentDescription = null)
+                                    Icon(AppIcons.FileUpload, contentDescription = null)
                                 },
                                 onClick = {
                                     showOptionsMenu = false
@@ -239,7 +231,7 @@ fun MainScreen(
                             DropdownMenuItem(
                                 text = { Text("Import Backup") },
                                 leadingIcon = {
-                                    Icon(Icons.Default.FileDownload, contentDescription = null)
+                                    Icon(AppIcons.FileDownload, contentDescription = null)
                                 },
                                 onClick = {
                                     showOptionsMenu = false
@@ -252,7 +244,7 @@ fun MainScreen(
                             DropdownMenuItem(
                                 text = { Text("Re-cluster All") },
                                 leadingIcon = {
-                                    Icon(Icons.Default.AutoAwesome, contentDescription = null)
+                                    Icon(AppIcons.AutoAwesome, contentDescription = null)
                                 },
                                 enabled = totalCount > 0,
                                 onClick = {
@@ -325,7 +317,7 @@ fun MainScreen(
                         .height(44.dp),
                     shape = RoundedCornerShape(12.dp)
                 ) {
-                    Icon(Icons.Default.DocumentScanner, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Icon(AppIcons.DocumentScanner, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(6.dp))
                     Text("Scan Device")
                 }
@@ -338,7 +330,7 @@ fun MainScreen(
                         .height(44.dp),
                     shape = RoundedCornerShape(12.dp)
                 ) {
-                    Icon(Icons.Default.AddPhotoAlternate, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Icon(AppIcons.AddPhotoAlternate, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(6.dp))
                     Text("Import")
                 }
@@ -382,7 +374,7 @@ fun MainScreen(
                             ) {
                                 Box(contentAlignment = Alignment.Center) {
                                     Icon(
-                                        Icons.Default.PhotoLibrary,
+                                        AppIcons.PhotoLibrary,
                                         contentDescription = null,
                                         tint = MaterialTheme.colorScheme.primary,
                                         modifier = Modifier.size(44.dp)
@@ -571,7 +563,7 @@ private fun ScanningProgressSection(
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         Icon(
-                            Icons.Default.AutoAwesome,
+                            AppIcons.AutoAwesome,
                             contentDescription = null,
                             modifier = Modifier.size(16.dp),
                             tint = MaterialTheme.colorScheme.primary

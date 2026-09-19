@@ -41,6 +41,12 @@ interface ScreenshotDao {
     @Query("SELECT uriString FROM screenshots")
     suspend fun getAllScannedUris(): List<String>
 
+    @Query("SELECT id, uriString, displayName, dateAdded, category FROM screenshots")
+    suspend fun getAllGridItemsSync(): List<ScreenshotGridItem>
+
+    @Query("UPDATE screenshots SET uriString = :newUri WHERE id = :id")
+    suspend fun updateUri(id: Long, newUri: String)
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(screenshots: List<ScreenshotEntity>)
 

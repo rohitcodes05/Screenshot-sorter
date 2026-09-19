@@ -27,12 +27,11 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.ContentCopy
+import com.screensort.app.ui.icons.AppIcons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Info
@@ -63,7 +62,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
@@ -78,9 +76,7 @@ import com.screensort.app.data.local.ScreenshotEntity
 import com.screensort.app.data.local.ScreenshotGridItem
 import com.screensort.app.ui.theme.getCategoryColor
 import androidx.compose.foundation.ExperimentalFoundationApi
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import com.screensort.app.util.DateTimeUtils
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -263,17 +259,7 @@ fun ScreenshotGalleryViewer(
                 } ?: 0
 
                 val formattedDate = remember(currentItem.dateAdded) {
-                    try {
-                        val timeMs = if (currentItem.dateAdded > 0 && currentItem.dateAdded < 100_000_000_000L) {
-                            currentItem.dateAdded * 1000L
-                        } else {
-                            currentItem.dateAdded
-                        }
-                        val date = Date(timeMs)
-                        SimpleDateFormat("MMM d, yyyy, h:mm a", Locale.getDefault()).format(date)
-                    } catch (e: Exception) {
-                        ""
-                    }
+                    DateTimeUtils.formatDateTime(currentItem.dateAdded)
                 }
 
                 Column(
@@ -414,7 +400,7 @@ fun ScreenshotGalleryViewer(
                                 modifier = Modifier.size(28.dp)
                             ) {
                                 Icon(
-                                    Icons.Default.ContentCopy,
+                                    AppIcons.ContentCopy,
                                     contentDescription = "Copy text",
                                     modifier = Modifier.size(16.dp),
                                     tint = MaterialTheme.colorScheme.primary
@@ -492,7 +478,7 @@ fun ScreenshotGalleryViewer(
                                 .weight(1f)
                                 .height(44.dp)
                         ) {
-                            Icon(Icons.Default.ContentCopy, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Icon(AppIcons.ContentCopy, contentDescription = null, modifier = Modifier.size(18.dp))
                             Spacer(modifier = Modifier.width(6.dp))
                             Text("Copy Text")
                         }
