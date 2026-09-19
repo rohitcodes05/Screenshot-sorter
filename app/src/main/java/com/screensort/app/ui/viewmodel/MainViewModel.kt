@@ -48,6 +48,9 @@ class MainViewModel(
     private val _selectedScreenshot = MutableStateFlow<ScreenshotEntity?>(null)
     val selectedScreenshot: StateFlow<ScreenshotEntity?> = _selectedScreenshot.asStateFlow()
 
+    private val _selectedScreenshotIds = MutableStateFlow<Set<Long>>(emptySet())
+    val selectedScreenshotIds: StateFlow<Set<Long>> = _selectedScreenshotIds.asStateFlow()
+
     private var selectScreenshotJob: Job? = null
     private var currentSelectedId: Long? = null
 
@@ -231,6 +234,45 @@ class MainViewModel(
             if (_selectedScreenshot.value?.id == screenshot.id) {
                 _selectedScreenshot.value = null
             }
+        }
+    }
+
+    fun toggleSelection(id: Long) {
+        val current = _selectedScreenshotIds.value
+        _selectedScreenshotIds.value = if (id in current) {
+            current - id
+        } else {
+            current + id
+        }
+    }
+
+    fun selectAll(ids: List<Long>) {
+        _selectedScreenshotIds.value = ids.toSet()
+    }
+
+    fun clearSelection() {
+        _selectedScreenshotIds.value = emptySet()
+    }
+
+    fun moveSelectedToCategory(newCategory: String) {
+        val ids = _selectedScreenshotIds.value.toList()
+        if (ids.isEmpty()) return
+
+        viewModelScope.launch {
+            repository.updateCategoryBulk(ids, newCategory)
+            _userMessage.value = "Moved ${ids.size} screenshot(s) to '$newCategory'"
+            clearSelection()
+        }
+    }
+
+    fun deleteSelected() {
+        val ids = _selectedScreenshotIds.value.toList()
+        if (ids.isEmpty()) return
+
+        viewModelScope.launch {
+            repository.deleteScreenshotsBulk(ids)
+            _userMessage.value = "Removed ${ids.size} screenshot(s) from ScreenSort"
+            clearSelection()
         }
     }
 

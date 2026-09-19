@@ -27,6 +27,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -35,6 +38,9 @@ import com.screensort.app.data.local.UserCategoryEntity
 import com.screensort.app.ui.theme.GoldAccent
 import com.screensort.app.ui.theme.getCategoryColor
 
+/**
+ * Tactile category filter pills with subtle active borders and haptic feedback.
+ */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun DynamicCategoryChips(
@@ -48,7 +54,8 @@ fun DynamicCategoryChips(
     modifier: Modifier = Modifier
 ) {
     val userCatMap = remember(userCategories) { userCategories.associateBy { it.name } }
-    val chipShape = RoundedCornerShape(10.dp)
+    val pillShape = RoundedCornerShape(20.dp)
+    val haptic = LocalHapticFeedback.current
 
     LazyRow(
         modifier = modifier,
@@ -56,20 +63,34 @@ fun DynamicCategoryChips(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // "All" filter chip
+        // "All" filter pill
         item {
             val isAllSelected = selectedCategory == null
             Surface(
-                shape = chipShape,
-                color = if (isAllSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
+                shape = pillShape,
+                color = if (isAllSelected) {
+                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.75f)
+                } else {
+                    MaterialTheme.colorScheme.surface
+                },
                 border = BorderStroke(
-                    width = 1.dp,
-                    color = if (isAllSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)
+                    width = if (isAllSelected) 1.5.dp else 1.dp,
+                    color = if (isAllSelected) {
+                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.85f)
+                    } else {
+                        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                    }
                 ),
+                shadowElevation = if (isAllSelected) 1.dp else 0.dp,
                 modifier = Modifier
-                    .height(36.dp)
-                    .clip(chipShape)
-                    .combinedClickable(onClick = { onCategorySelected(null) })
+                    .height(34.dp)
+                    .clip(pillShape)
+                    .combinedClickable(
+                        onClick = {
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            onCategorySelected(null)
+                        }
+                    )
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -77,45 +98,68 @@ fun DynamicCategoryChips(
                 ) {
                     Text(
                         text = "All",
-                        style = MaterialTheme.typography.labelLarge,
-                        color = if (isAllSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = if (isAllSelected) FontWeight.Bold else FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Surface(
-                        shape = RoundedCornerShape(6.dp),
-                        color = if (isAllSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant
+                        shape = RoundedCornerShape(10.dp),
+                        color = if (isAllSelected) {
+                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
+                        } else {
+                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                        }
                     ) {
                         Text(
                             text = totalCount.toString(),
                             style = MaterialTheme.typography.labelSmall,
+                            fontFamily = FontFamily.Monospace,
                             fontWeight = FontWeight.Bold,
-                            color = if (isAllSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp)
                         )
                     }
                 }
             }
         }
 
-        // Category chips
+        // Category pills
         items(categories, key = { it.category }) { item ->
             val isSelected = selectedCategory == item.category
             val userCat = userCatMap[item.category]
             val catColor = getCategoryColor(item.category)
-            val onLongClickAction: (() -> Unit)? = userCat?.let { cat -> { onDeleteCategory(cat) } }
+            val onLongClickAction: (() -> Unit)? = userCat?.let { cat ->
+                {
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    onDeleteCategory(cat)
+                }
+            }
 
             Surface(
-                shape = chipShape,
-                color = if (isSelected) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surface,
+                shape = pillShape,
+                color = if (isSelected) {
+                    catColor.copy(alpha = 0.14f)
+                } else {
+                    MaterialTheme.colorScheme.surface
+                },
                 border = BorderStroke(
-                    width = 1.dp,
-                    color = if (isSelected) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)
+                    width = if (isSelected) 1.5.dp else 1.dp,
+                    color = if (isSelected) {
+                        catColor
+                    } else {
+                        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                    }
                 ),
+                shadowElevation = if (isSelected) 1.dp else 0.dp,
                 modifier = Modifier
-                    .height(36.dp)
-                    .clip(chipShape)
+                    .height(34.dp)
+                    .clip(pillShape)
                     .combinedClickable(
-                        onClick = { onCategorySelected(item.category) },
+                        onClick = {
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            onCategorySelected(item.category)
+                        },
                         onLongClick = onLongClickAction
                     )
             ) {
@@ -127,7 +171,7 @@ fun DynamicCategoryChips(
                         Text(
                             text = "★",
                             color = GoldAccent,
-                            fontSize = 13.sp,
+                            fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.padding(end = 4.dp)
                         )
@@ -135,21 +179,25 @@ fun DynamicCategoryChips(
 
                     Text(
                         text = item.category,
-                        style = MaterialTheme.typography.labelLarge,
-                        color = if (isSelected) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurface
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
 
                     if (userCat != null) {
-                        Spacer(modifier = Modifier.width(4.dp))
+                        Spacer(modifier = Modifier.width(3.dp))
                         IconButton(
-                            onClick = { onEditCategory(userCat) },
-                            modifier = Modifier.size(22.dp)
+                            onClick = {
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                onEditCategory(userCat)
+                            },
+                            modifier = Modifier.size(20.dp)
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Edit,
                                 contentDescription = "Edit Category",
-                                modifier = Modifier.size(13.dp),
-                                tint = if (isSelected) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
+                                modifier = Modifier.size(12.dp),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
@@ -157,15 +205,16 @@ fun DynamicCategoryChips(
                     Spacer(modifier = Modifier.width(6.dp))
 
                     Surface(
-                        shape = RoundedCornerShape(6.dp),
+                        shape = RoundedCornerShape(10.dp),
                         color = if (isSelected) catColor else catColor.copy(alpha = 0.15f)
                     ) {
                         Text(
                             text = item.count.toString(),
                             style = MaterialTheme.typography.labelSmall,
+                            fontFamily = FontFamily.Monospace,
                             fontWeight = FontWeight.Bold,
                             color = if (isSelected) Color.White else catColor,
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp)
                         )
                     }
                 }
@@ -173,4 +222,3 @@ fun DynamicCategoryChips(
         }
     }
 }
-

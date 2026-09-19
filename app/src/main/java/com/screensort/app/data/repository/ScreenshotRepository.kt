@@ -287,6 +287,16 @@ class ScreenshotRepository(
         dao.delete(screenshot)
     }
 
+    suspend fun updateCategoryBulk(ids: List<Long>, newCategory: String) = withContext(Dispatchers.IO) {
+        if (ids.isEmpty()) return@withContext
+        dao.updateCategoryBulk(ids, newCategory)
+    }
+
+    suspend fun deleteScreenshotsBulk(ids: List<Long>) = withContext(Dispatchers.IO) {
+        if (ids.isEmpty()) return@withContext
+        dao.deleteBulk(ids)
+    }
+
     /**
      * Exports all user categories and screenshot metadata as a portable [BackupPayload].
      */

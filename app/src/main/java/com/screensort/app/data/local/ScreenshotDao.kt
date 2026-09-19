@@ -64,4 +64,10 @@ interface ScreenshotDao {
 
     @Delete
     suspend fun delete(screenshot: ScreenshotEntity)
+
+    @Query("UPDATE screenshots SET category = :newCategory, isManuallyCategorized = 1 WHERE id IN (:ids)")
+    suspend fun updateCategoryBulk(ids: List<Long>, newCategory: String)
+
+    @Query("DELETE FROM screenshots WHERE id IN (:ids)")
+    suspend fun deleteBulk(ids: List<Long>)
 }

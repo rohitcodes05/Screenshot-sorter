@@ -1,8 +1,9 @@
 package com.screensort.app.ui.components
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -10,9 +11,15 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -21,10 +28,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -36,10 +43,22 @@ import com.screensort.app.data.local.ScreenshotGridItem
 import com.screensort.app.ui.theme.getCategoryColor
 import com.screensort.app.util.DateTimeUtils
 
+/**
+ * Modern tactile "Receipt / Ticket" style card for screenshots.
+ * - Subtle 1dp border, minimal corner radius (6dp).
+ * - Asymmetric natural image height scaling for staggered grid layout.
+ * - Micro category badge stamp at top-right corner.
+ * - Hairline divider separating image and bottom monospace OCR preview snippet.
+ * - Multi-select checkbox indicator and active border highlighting.
+ */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ScreenshotCard(
     screenshot: ScreenshotGridItem,
+    isSelected: Boolean = false,
+    isSelectionMode: Boolean = false,
     onClick: () -> Unit,
+    onLongClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val categoryColor = getCategoryColor(screenshot.category)
@@ -47,7 +66,7 @@ fun ScreenshotCard(
     val imageRequest = remember(screenshot.uriString) {
         ImageRequest.Builder(context)
             .data(screenshot.uriString)
-            .size(400, 480)
+            .size(400, 520)
             .precision(Precision.INEXACT)
             .crossfade(true)
             .build()
@@ -57,33 +76,50 @@ fun ScreenshotCard(
         DateTimeUtils.formatDate(screenshot.dateAdded)
     }
 
-    val cardShape = RoundedCornerShape(16.dp)
+    // Deterministic organic aspect ratio variation for natural staggered ticket flow
+    val cardAspectRatio = remember(screenshot.id) {
+        when ((screenshot.id % 4L).toInt()) {
+            0 -> 0.92f
+            1 -> 1.18f
+            2 -> 1.05f
+            else -> 1.28f
+        }
+    }
+
+    val cardShape = RoundedCornerShape(6.dp)
 
     Card(
         modifier = modifier
             .fillMaxWidth()
             .clip(cardShape)
-            .clickable(onClick = onClick),
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = onLongClick
+            ),
         shape = cardShape,
         elevation = CardDefaults.cardElevation(
-            defaultElevation = 1.dp,
-            pressedElevation = 4.dp
+            defaultElevation = 0.dp,
+            pressedElevation = 2.dp
         ),
         border = BorderStroke(
-            width = 1.dp,
-            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+            width = if (isSelected) 2.dp else 1.dp,
+            color = if (isSelected) {
+                MaterialTheme.colorScheme.primary
+            } else {
+                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f)
+            }
         ),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         )
     ) {
         Column {
-            // Screenshot image preview container
+            // Ticket image preview container
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .aspectRatio(0.82f)
-                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f))
+                    .aspectRatio(cardAspectRatio)
+                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f))
             ) {
                 AsyncImage(
                     model = imageRequest,
@@ -92,63 +128,113 @@ fun ScreenshotCard(
                     modifier = Modifier.matchParentSize()
                 )
 
-                // Top gradient scrim for pill readability
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(44.dp)
-                        .align(Alignment.TopCenter)
-                        .background(
-                            Brush.verticalGradient(
-                                colors = listOf(
-                                    Color.Black.copy(alpha = 0.28f),
-                                    Color.Transparent
-                                )
-                            )
-                        )
-                )
+                // Selection overlay scrim
+                if (isSelected) {
+                    Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.16f))
+                    )
+                }
 
-                // Category pill overlay
+                // Micro category badge stamp (Top-Right)
                 Surface(
-                    shape = RoundedCornerShape(6.dp),
-                    color = categoryColor,
-                    shadowElevation = 2.dp,
+                    shape = RoundedCornerShape(3.dp),
+                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
+                    border = BorderStroke(1.dp, categoryColor.copy(alpha = 0.75f)),
+                    shadowElevation = 1.dp,
                     modifier = Modifier
-                        .align(Alignment.TopStart)
-                        .padding(8.dp)
+                        .align(Alignment.TopEnd)
+                        .padding(7.dp)
                 ) {
                     Text(
-                        text = screenshot.category,
-                        color = Color.White,
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        letterSpacing = 0.2.sp,
-                        modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp),
+                        text = screenshot.category.uppercase(),
+                        color = categoryColor,
+                        fontFamily = FontFamily.Monospace,
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 0.6.sp,
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                 }
+
+                // Checkbox indicator (Top-Left)
+                if (isSelectionMode) {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
+                            .padding(7.dp)
+                    ) {
+                        if (isSelected) {
+                            Surface(
+                                shape = CircleShape,
+                                color = MaterialTheme.colorScheme.primary,
+                                shadowElevation = 2.dp,
+                                modifier = Modifier.size(24.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        imageVector = Icons.Default.Check,
+                                        contentDescription = "Selected",
+                                        tint = MaterialTheme.colorScheme.onPrimary,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
+                            }
+                        } else {
+                            Surface(
+                                shape = CircleShape,
+                                color = Color.Black.copy(alpha = 0.45f),
+                                border = BorderStroke(1.5.dp, Color.White),
+                                modifier = Modifier.size(24.dp)
+                            ) {}
+                        }
+                    }
+                }
             }
 
-            // Clean title and metadata snippet
+            // Hairline divider
+            HorizontalDivider(
+                thickness = 1.dp,
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f)
+            )
+
+            // Monospace OCR snippet preview section
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 12.dp, vertical = 10.dp)
+                    .background(MaterialTheme.colorScheme.surface)
+                    .padding(horizontal = 10.dp, vertical = 8.dp)
             ) {
+                val cleanTitle = remember(screenshot.displayName) {
+                    screenshot.displayName.substringBeforeLast(".")
+                }
                 Text(
-                    text = screenshot.displayName,
+                    text = cleanTitle,
                     style = MaterialTheme.typography.titleSmall,
+                    fontFamily = FontFamily.Monospace,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 11.5.sp,
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-                Spacer(modifier = Modifier.height(2.dp))
+
+                Spacer(modifier = Modifier.height(3.dp))
+
+                val docSnippet = remember(screenshot.id, formattedDate) {
+                    "> REF#${screenshot.id.toString().padStart(4, '0')} // $formattedDate"
+                }
                 Text(
-                    text = formattedDate,
-                    style = MaterialTheme.typography.labelSmall,
+                    text = docSnippet,
+                    fontFamily = FontFamily.Monospace,
+                    fontSize = 9.5.sp,
                     color = MaterialTheme.colorScheme.outline,
-                    maxLines = 1
+                    maxLines = 1,
+                    letterSpacing = 0.2.sp,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
         }
